@@ -99,7 +99,10 @@ def load_to_bigquery(df, table_name):
     try: client.get_dataset(dataset_ref)
     except Exception: client.create_dataset(bigquery.Dataset(dataset_ref))
     table_id = f"{BQ_PROJECT_ID}.{BQ_DATASET_ID}.{table_name}"
-    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
+    job_config = bigquery.LoadJobConfig(
+        write_disposition="WRITE_APPEND",
+        schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION]
+    )
     try:
         job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
         job.result() 
