@@ -1,4 +1,4 @@
-﻿import os
+import os
 from google.cloud import bigquery
 
 BQ_PROJECT_ID = os.environ.get('BQ_PROJECT_ID')
@@ -36,10 +36,14 @@ def run_sql_models():
         SELECT 
             DATE(TIMESTAMP(created_at)) as report_date,
             channel,
-            COUNT(ticket_id) as total_tickets,
-            COUNTIF(status = 'closed') as resolved_tickets,
+            COUNT(DISTINCT ticket_id) as total_tickets,
+            COUNT(DISTINCT CASE WHEN status = 'closed' THEN ticket_id ELSE NULL END) as resolved_tickets,
             AVG(CASE WHEN status = 'closed' THEN TIMESTAMP_DIFF(TIMESTAMP(updated_at), TIMESTAMP(created_at), HOUR) ELSE NULL END) as avg_resolution_time_hours
-        FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.gorgias_tickets
+        FROM (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY ticket_id ORDER BY updated_at DESC, created_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.gorgias_tickets
+        )
+        WHERE rn = 1
         GROUP BY report_date, channel
         '''
         client.query(sql_cx).result()
