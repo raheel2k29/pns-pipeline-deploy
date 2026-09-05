@@ -48,6 +48,49 @@ def run_sql_models():
         '''
         client.query(sql_cx).result()
         print("Successfully created/updated analytics.cx_metrics SQL View!")
+
+        sql_ceo = f'''
+        CREATE OR REPLACE VIEW {BQ_PROJECT_ID}.{BQ_DATASET_ANALYTICS}.ceo_financials AS
+        SELECT
+            DATE(TIMESTAMP(o.created_at)) as report_date,
+            SUM(l.price * l.quantity) as gross_revenue,
+            SUM(l.cost * l.quantity) as total_cogs,
+            SUM(l.price * l.quantity) - SUM(l.cost * l.quantity) as gross_profit,
+            SAFE_DIVIDE(SUM(l.price * l.quantity) - SUM(l.cost * l.quantity), SUM(l.price * l.quantity)) as profit_margin
+        FROM (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY order_id ORDER BY updated_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_orders
+        ) o
+        JOIN (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY line_item_id ORDER BY updated_at ASC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_order_line_items
+        ) l ON o.order_id = l.order_id
+        WHERE o.rn = 1 AND l.rn = 1
+        GROUP BY report_date
+        '''
+        client.query(sql_ceo).result()
+        print("Successfully created/updated analytics.ceo_financials SQL View!")
+
+        sql_inventory = f'''
+        CREATE OR REPLACE VIEW {BQ_PROJECT_ID}.{BQ_DATASET_ANALYTICS}.inventory_health AS
+        SELECT
+            i.inventory_item_id,
+            l.name as supplier_name,
+            i.available as raw_stock,
+            CASE 
+                WHEN l.name = 'PetDropshipper' AND i.available <= 10 THEN 0
+                WHEN i.available <= 3 THEN 0
+                ELSE i.available 
+            END as safe_stock
+        FROM (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY inventory_item_id ORDER BY updated_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_inventory
+        ) i
+        LEFT JOIN {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_locations l ON i.location_id = l.location_id
+        WHERE i.rn = 1
+        '''
+        client.query(sql_inventory).result()
+        print("Successfully created/updated analytics.inventory_health SQL View!")
         
     except Exception as e:
         print(f"Failed to run SQL model: {e}")
