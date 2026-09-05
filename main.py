@@ -1,4 +1,4 @@
-﻿import os
+import os
 import time
 import schedule
 import subprocess
@@ -39,8 +39,8 @@ def run_all():
     print("--- Sync Complete ---")
 
 run_all()
-schedule.every(1).hours.do(run_all)
-print("Scheduler started. Pipelines will run every 1 hour.")
+schedule.every(10).minutes.do(run_all)
+print("Scheduler started. Pipelines will run every 10 minutes.")
 
 while True:
     schedule.run_pending()
