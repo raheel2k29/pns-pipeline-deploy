@@ -18,7 +18,7 @@ def get_gmc_issues():
         token = credentials.token
         
         # New Google Merchant API v1 endpoints
-        url = f"https://merchantapi.googleapis.com/products/v1beta/accounts/{MERCHANT_ID}/products"
+        url = f"https://merchantapi.googleapis.com/products/v1/accounts/{MERCHANT_ID}/products"
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
