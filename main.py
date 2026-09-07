@@ -1,3 +1,9 @@
+try:
+    print('--- Running One-Time GCP Registration ---')
+    import register_gcp
+except Exception as e:
+    print('Registration script failed:', str(e))
+
 import os
 import time
 import schedule
@@ -45,4 +51,5 @@ print("Scheduler started. Pipelines will run every 10 minutes.")
 while True:
     schedule.run_pending()
     time.sleep(60)
+
 
