@@ -1,9 +1,3 @@
-try:
-    print('--- Running One-Time GCP Registration ---')
-    import register_gcp
-except Exception as e:
-    print('Registration script failed:', str(e))
-
 import os
 import time
 import schedule
@@ -37,6 +31,12 @@ def run_sql():
     subprocess.run(["python", "sql_modeling.py"])
 
 def run_all():
+    print('--- Running One-Time GCP Registration ---')
+    try:
+        import register_gcp
+    except Exception as e:
+        print('Registration script failed:', str(e))
+
     print("--- Starting Full Pipeline Sync ---")
     run_shopify()
     run_gorgias()
@@ -51,5 +51,6 @@ print("Scheduler started. Pipelines will run every 10 minutes.")
 while True:
     schedule.run_pending()
     time.sleep(60)
+
 
 
