@@ -11,7 +11,7 @@ credentials, project = google.auth.default(scopes=['https://www.googleapis.com/a
 credentials.refresh(Request())
 token = credentials.token
 
-url = f"https://merchantapi.googleapis.com/accounts/v1beta/accounts/{MERCHANT_ID}:registerGcp"
+url = f"https://merchantapi.googleapis.com/accounts/v1/accounts/{MERCHANT_ID}:registerGcp"
 headers = {
     "Authorization": f"Bearer {token}",
     "Content-Type": "application/json"
