@@ -92,6 +92,51 @@ def run_sql_models():
         client.query(sql_inventory).result()
         print("Successfully created/updated analytics.inventory_health SQL View!")
         
+        sql_catalog = f'''
+        CREATE OR REPLACE VIEW {BQ_PROJECT_ID}.{BQ_DATASET_ANALYTICS}.catalog_health AS
+        WITH latest_products AS (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY product_id ORDER BY updated_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_products
+        ),
+        latest_gmc AS (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY product_id, issue_code ORDER BY updated_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.gmc_diagnostics
+        )
+        SELECT 
+            p.product_id,
+            p.title as product_title,
+            p.vendor as supplier,
+            p.status,
+            CASE WHEN p.title IS NOT NULL AND p.vendor IS NOT NULL AND p.product_type IS NOT NULL THEN 1 ELSE 0 END as metafield_completeness,
+            COUNT(g.issue_code) as total_feed_errors,
+            STRING_AGG(g.description, ', ') as feed_error_descriptions
+        FROM latest_products p
+        LEFT JOIN latest_gmc g ON CAST(p.product_id AS STRING) = g.product_id AND g.rn = 1
+        WHERE p.rn = 1
+        GROUP BY 1,2,3,4,5
+        '''
+        client.query(sql_catalog).result()
+        print("Successfully created/updated analytics.catalog_health SQL View!")
+
+        sql_tech = f'''
+        CREATE OR REPLACE VIEW {BQ_PROJECT_ID}.{BQ_DATASET_ANALYTICS}.tech_latency AS
+        SELECT
+            DATE(execution_time) as report_date,
+            pipeline_name,
+            COUNT(*) as total_runs,
+            COUNTIF(status = 'ERROR') as total_failures,
+            SAFE_DIVIDE(COUNTIF(status = 'ERROR'), COUNT(*)) as error_rate,
+            AVG(duration_seconds) as avg_execution_seconds,
+            MAX(duration_seconds) as max_execution_seconds
+        FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.deploy_logs
+        GROUP BY 1,2
+        '''
+        try:
+            client.query(sql_tech).result()
+            print("Successfully created/updated analytics.tech_latency SQL View!")
+        except Exception as e:
+            print("tech_latency view skipped/failed (deploy_logs might not exist yet):", e)
+        
     except Exception as e:
         print(f"Failed to run SQL model: {e}")
 
