@@ -45,3 +45,4 @@ print("Scheduler started. Pipelines will run every 10 minutes.")
 while True:
     schedule.run_pending()
     time.sleep(60)
+
