@@ -115,8 +115,11 @@ def run_sql_models():
         WHERE p.rn = 1
         GROUP BY 1,2,3,4,5
         '''
-        client.query(sql_catalog).result()
-        print("Successfully created/updated analytics.catalog_health SQL View!")
+        try:
+            client.query(sql_catalog).result()
+            print("Successfully created/updated analytics.catalog_health SQL View!")
+        except Exception as e:
+            print(f"catalog_health view skipped/failed (gmc_diagnostics might not exist yet): {e}")
 
         sql_tech = f'''
         CREATE OR REPLACE VIEW {BQ_PROJECT_ID}.{BQ_DATASET_ANALYTICS}.tech_latency AS
