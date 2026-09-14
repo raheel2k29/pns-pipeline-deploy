@@ -142,6 +142,16 @@ if __name__ == "__main__":
     if products_list:
         prods = []
         for p in products_list:
+            meta_resp = shopify_request(f"products/{p['id']}/metafields.json")
+            metafields = meta_resp.get('metafields', [])
+            supplier = ''
+            source_vendor = ''
+            for m in metafields:
+                if m.get('namespace') == 'custom' and m.get('key') == 'supplier':
+                    supplier = m.get('value', '')
+                if m.get('namespace') == 'custom' and m.get('key') == 'source_vendor':
+                    source_vendor = m.get('value', '')
+                    
             barcodes = [v.get('barcode', '') for v in p.get('variants', []) if v.get('barcode')]
             prods.append({
                 "product_id": str(p['id']), 
@@ -150,7 +160,9 @@ if __name__ == "__main__":
                 "product_type": p.get('product_type',''), 
                 "status": p.get('status',''),
                 "updated_at": p.get('updated_at', ''),
-                "has_barcode": len(barcodes) > 0
+                "has_barcode": len(barcodes) > 0,
+                "custom_supplier": supplier,
+                "custom_source_vendor": source_vendor
             })
         df_prod = pd.DataFrame(prods)
         load_to_bigquery(df_prod, "shopify_products")
