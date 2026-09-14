@@ -22,10 +22,23 @@ def run_sql_models():
             COUNT(DISTINCT r.refund_id) as total_refunds,
             SAFE_DIVIDE(COUNT(DISTINCT r.refund_id), COUNT(DISTINCT o.order_id)) as refund_rate,
             AVG(TIMESTAMP_DIFF(TIMESTAMP(f.created_at), TIMESTAMP(o.created_at), HOUR)) as avg_fulfillment_speed_hours
-        FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_orders o
-        LEFT JOIN {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_fulfillments f ON o.order_id = f.order_id
-        LEFT JOIN {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_refunds r ON o.order_id = r.order_id
-        LEFT JOIN {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_locations l ON f.location_id = l.location_id
+        FROM (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY order_id ORDER BY updated_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_orders
+        ) o
+        LEFT JOIN (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY fulfillment_id ORDER BY updated_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_fulfillments
+        ) f ON o.order_id = f.order_id AND f.rn = 1
+        LEFT JOIN (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY refund_id ORDER BY processed_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_refunds
+        ) r ON o.order_id = r.order_id AND r.rn = 1
+        LEFT JOIN (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY location_id ORDER BY name DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_locations
+        ) l ON f.location_id = l.location_id AND l.rn = 1
+        WHERE o.rn = 1
         GROUP BY supplier_name
         '''
         client.query(sql_supplier).result()
