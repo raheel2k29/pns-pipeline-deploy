@@ -152,6 +152,27 @@ def run_sql_models():
             print("Successfully created/updated analytics.tech_latency SQL View!")
         except Exception as e:
             print("tech_latency view skipped/failed (deploy_logs might not exist yet):", e)
+
+        sql_growth = f'''
+        CREATE OR REPLACE VIEW {BQ_PROJECT_ID}.{BQ_DATASET_ANALYTICS}.growth_metrics AS
+        SELECT
+            DATE(TIMESTAMP(created_at)) as report_date,
+            COUNT(DISTINCT order_id) as total_orders,
+            SUM(CAST(total_price AS FLOAT64)) as gross_sales,
+            SUM(CAST(total_discounts AS FLOAT64)) as total_discounts,
+            SAFE_DIVIDE(SUM(CAST(total_price AS FLOAT64)), COUNT(DISTINCT order_id)) as average_order_value
+        FROM (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY order_id ORDER BY updated_at DESC) as rn
+            FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.shopify_orders
+        )
+        WHERE rn = 1
+        GROUP BY report_date
+        '''
+        try:
+            client.query(sql_growth).result()
+            print("Successfully created/updated analytics.growth_metrics SQL View!")
+        except Exception as e:
+            print("growth_metrics view skipped/failed:", e)
         
     except Exception as e:
         print(f"Failed to run SQL model: {e}")
