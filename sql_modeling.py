@@ -159,7 +159,6 @@ def run_sql_models():
             DATE(TIMESTAMP(created_at)) as report_date,
             COUNT(DISTINCT order_id) as total_orders,
             SUM(CAST(total_price AS FLOAT64)) as gross_sales,
-            SUM(CAST(total_discounts AS FLOAT64)) as total_discounts,
             SAFE_DIVIDE(SUM(CAST(total_price AS FLOAT64)), COUNT(DISTINCT order_id)) as average_order_value
         FROM (
             SELECT *, ROW_NUMBER() OVER(PARTITION BY order_id ORDER BY updated_at DESC) as rn
