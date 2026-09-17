@@ -51,7 +51,9 @@ def run_sql_models():
             channel,
             COUNT(DISTINCT ticket_id) as total_tickets,
             COUNT(DISTINCT CASE WHEN status = 'closed' THEN ticket_id ELSE NULL END) as resolved_tickets,
-            AVG(CASE WHEN status = 'closed' THEN TIMESTAMP_DIFF(TIMESTAMP(updated_at), TIMESTAMP(created_at), HOUR) ELSE NULL END) as avg_resolution_time_hours
+            AVG(CASE WHEN status = 'closed' THEN TIMESTAMP_DIFF(TIMESTAMP(updated_at), TIMESTAMP(created_at), HOUR) ELSE NULL END) as avg_resolution_time_hours,
+            AVG(NULLIF(csat_score, 0)) as avg_csat_score,
+            AVG(NULLIF(first_response_time_minutes, 0)) as avg_first_response_time_minutes
         FROM (
             SELECT *, ROW_NUMBER() OVER(PARTITION BY ticket_id ORDER BY updated_at DESC, created_at DESC) as rn
             FROM {BQ_PROJECT_ID}.{BQ_DATASET_CORE}.gorgias_tickets

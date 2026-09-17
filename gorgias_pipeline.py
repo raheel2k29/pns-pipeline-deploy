@@ -1,4 +1,4 @@
-﻿import os
+import os
 import requests
 import pandas as pd
 from google.cloud import bigquery
@@ -32,7 +32,9 @@ def transform_tickets(tickets_data):
             "created_at": ticket.get('created_datetime'),
             "updated_at": ticket.get('updated_datetime'),
             "customer_id": str(ticket.get('customer', {}).get('id', '')),
-            "channel": ticket.get('channel', 'email')
+            "channel": ticket.get('channel', 'email'),
+            "csat_score": float(ticket.get('satisfaction_survey', {}).get('rating', 0) or 0),
+            "first_response_time_minutes": float(ticket.get('first_response_time', 0) or 0)
         })
     return pd.DataFrame(processed)
 
