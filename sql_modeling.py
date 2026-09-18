@@ -107,6 +107,24 @@ def run_sql_models():
         client.query(sql_inventory).result()
         print("Successfully created/updated analytics.inventory_health SQL View!")
         
+        # Ensure gmc_diagnostics exists even if empty so catalog_health doesn't fail
+        try:
+            client.get_table(f"{BQ_PROJECT_ID}.{BQ_DATASET_CORE}.gmc_diagnostics")
+        except Exception:
+            print("Creating empty gmc_diagnostics table so view doesn't fail...")
+            schema = [
+                bigquery.SchemaField("product_id", "STRING"),
+                bigquery.SchemaField("title", "STRING"),
+                bigquery.SchemaField("issue_code", "STRING"),
+                bigquery.SchemaField("description", "STRING"),
+                bigquery.SchemaField("resolution", "STRING"),
+                bigquery.SchemaField("destination", "STRING"),
+                bigquery.SchemaField("servability", "STRING"),
+                bigquery.SchemaField("updated_at", "TIMESTAMP"),
+            ]
+            table = bigquery.Table(f"{BQ_PROJECT_ID}.{BQ_DATASET_CORE}.gmc_diagnostics", schema=schema)
+            client.create_table(table)
+
         sql_catalog = f'''
         CREATE OR REPLACE VIEW {BQ_PROJECT_ID}.{BQ_DATASET_ANALYTICS}.catalog_health AS
         WITH latest_products AS (
