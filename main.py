@@ -67,8 +67,8 @@ def register_gcp():
         from google.auth.transport.requests import AuthorizedSession
         credentials, project = google.auth.default(scopes=['https://www.googleapis.com/auth/content'])
         authed_session = AuthorizedSession(credentials)
-        url = "https://merchantapi.googleapis.com/accounts/v1beta/accounts/5829285869:registerGcp"
-        payload = {"gcpProjectId": "pns-analytics-508923"}
+        url = "https://merchantapi.googleapis.com/accounts/v1/accounts/5829285869/developerRegistration:registerGcp"
+        payload = {"developerEmail": "pipeline@pns-analytics-508923.iam.gserviceaccount.com"}
         response = authed_session.post(url, json=payload)
         print(f"GCP Registration: {response.status_code} - {response.text}")
     except Exception as e:
