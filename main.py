@@ -19,7 +19,8 @@ if 'GOOGLE_JSON_KEY' in os.environ:
 def log_to_bigquery(pipeline_name, status, duration_seconds):
     try:
         client = bigquery.Client()
-        table_id = "pns-data-warehouse.pns_core.deploy_logs"
+        project_id = os.environ.get("BQ_PROJECT_ID", "pns-data-warehouse")
+        table_id = f"{project_id}.pns_core.deploy_logs"
         
         schema = [
             bigquery.SchemaField("execution_time", "TIMESTAMP"),
