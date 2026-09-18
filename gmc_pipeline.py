@@ -17,8 +17,8 @@ def get_gmc_issues():
         credentials.refresh(Request())
         token = credentials.token
         
-        # Revert to older Content API v2.1 to bypass the registerGcp requirement!
-        url = f"https://shoppingcontent.googleapis.com/content/v2.1/{MERCHANT_ID}/productstatuses"
+        # New Google Merchant API v1 endpoints
+        url = f"https://merchantapi.googleapis.com/products/v1/accounts/{MERCHANT_ID}/products"
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
@@ -38,13 +38,14 @@ def get_gmc_issues():
                 break
                 
             data = response.json()
-            products = data.get('resources', [])
+            products = data.get('products', [])
             
             for prod in products:
-                product_id = prod.get('productId', '')
+                product_id = prod.get('name', '')
                 title = prod.get('title', '')
                 
-                issues = prod.get('itemLevelIssues', [])
+                status = prod.get('productStatus', {})
+                issues = status.get('itemLevelIssues', [])
                 
                 for issue in issues:
                     all_issues.append({
