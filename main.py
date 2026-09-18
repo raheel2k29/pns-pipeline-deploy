@@ -61,8 +61,22 @@ def run_pipeline(name, script):
     log_to_bigquery(name, status, duration)
     return status
 
+def register_gcp():
+    try:
+        import google.auth
+        from google.auth.transport.requests import AuthorizedSession
+        credentials, project = google.auth.default(scopes=['https://www.googleapis.com/auth/content'])
+        authed_session = AuthorizedSession(credentials)
+        url = "https://merchantapi.googleapis.com/accounts/v1beta/accounts/5829285869:registerGcp"
+        payload = {"gcpProjectId": "pns-analytics-508923"}
+        response = authed_session.post(url, json=payload)
+        print(f"GCP Registration: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"GCP Registration failed: {e}")
+
 def run_all():
     print("--- Starting Full Pipeline Sync ---")
+    register_gcp()
     run_pipeline("Shopify Pipeline", "shopify_pipeline.py")
     run_pipeline("Gorgias Pipeline", "gorgias_pipeline.py")
     run_pipeline("GMC Pipeline", "gmc_pipeline.py")
